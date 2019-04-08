@@ -149,18 +149,22 @@ class IdPHandlerViewMixin(ErrorHandler):
         idp_name_id_format_list = self.IDP.config.getattr("name_id_format",
                                                           "idp")
 
-        # In SPID fed -> SP do authn request unspecified and IDP do auth response as transient
-        # so if SP request for an NAMEID_FORMAT_UNSPECIFIED the IDP can response whatever he wants
-        if self.sp['name_id_format'] and idp_name_id_format_list:
-           if self.sp['name_id_format'] not in idp_name_id_format_list and \
-                self.sp['name_id_format'] != NAMEID_FORMAT_UNSPECIFIED:
-                return self.handle_error(request,
-                                         exception=_('SP requested a name_id_format '
-                                                     'that is not supported in the IDP'))
-        # Too low about security, DEPRECATED
-        # name_id_formats = [resp_args.get('name_id_policy').format] or \
-                           # self.IDP.config.getattr("name_id_format", "idp") or \
-                           # [NAMEID_FORMAT_UNSPECIFIED]
+        # name_id format availability
+        if idp_name_id_format_list and not self.sp['name_id_format']:
+            name_id_format = idp_name_id_format_list[0]
+
+        elif self.sp['name_id_format'] and not idp_name_id_format_list:
+            name_id_format = self.sp['name_id_format']
+
+        elif self.sp['name_id_format'] not in idp_name_id_format_list:
+            return self.handle_error(request,
+                                     exception=_('SP requested a name_id_format '
+                                                 'that is not supported in the IDP'))
+        elif self.sp['name_id_format'] in idp_name_id_format_list:
+            name_id_format = self.sp['name_id_format']
+
+        else:
+            name_id_format = NAMEID_FORMAT_UNSPECIFIED
 
         user_id = self.processor.get_user_id(user, self.sp, self.IDP.config)
         name_id = NameID(format=self.sp['name_id_format'],
