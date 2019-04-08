@@ -166,6 +166,10 @@ class IdPHandlerViewMixin(ErrorHandler):
         else:
             name_id_format = NAMEID_FORMAT_UNSPECIFIED
 
+        # if SP doesn't request a specific name_id_format...
+        if not self.sp['name_id_format']:
+            self.sp['name_id_format'] = name_id_format
+            
         user_id = self.processor.get_user_id(user, self.sp, self.IDP.config)
         name_id = NameID(format=self.sp['name_id_format'],
                          sp_name_qualifier=self.sp['id'],
