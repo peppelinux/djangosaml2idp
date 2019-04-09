@@ -16,6 +16,8 @@ from saml2.saml import (NAMEID_FORMAT_UNSPECIFIED,
 class NameIdBuilder:
     """ Processor with methods to retrieve nameID standard format
         see: https://wiki.shibboleth.net/confluence/display/CONCEPT/NameIdentifiers
+
+        also: http://docs.oasis-open.org/security/saml/v2.0/saml-core-2.0-os.pdf
     """
 
     # None needs to be implemented
@@ -42,13 +44,14 @@ class NameIdBuilder:
     def get_nameid_persistent(cls, user_id,
                               sp_entityid='', idp_entityid='',
                               user=None):
-        """ Get PersistentID in TransientID format
+        """ Get PersistentID
+            TransientID format as ComputedID
             see: http://software.internet2.edu/eduperson/internet2-mace-dir-eduperson-201602.html#eduPersonTargetedID
         """
         return '!'.join((idp_entityid,
                          sp_entityid,
                          cls.get_nameid_opaque(user_id,
-                                               salt=str(user.pk).encode())))
+                                               salt=(str(user.pk)+sp_entityid).encode())))
     @classmethod
     def get_nameid_email(cls, user_id, **kwargs):
         assert '@' in user_id
@@ -56,9 +59,10 @@ class NameIdBuilder:
 
     @classmethod
     def get_nameid_transient(cls, user_id, **kwargs):
-        """ This would return EPPN
+        """ This would an opaque and reusable
         """
-        return user_id
+        return cls.get_nameid_opaque(user_id,
+                                     salt=str(random.random()).encode())
 
     @classmethod
     def get_nameid_unspecified(cls, user_id):
